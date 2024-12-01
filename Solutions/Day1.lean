@@ -1,5 +1,6 @@
 import Batteries
 import Utils
+open Std
 
 def input :=  AOC.getInput 1
 
@@ -21,15 +22,13 @@ def parseLine (line: String) :=
 
 def process (i: String) :=
    let (left, right) :=
-     i
-     |>.splitOn "\n"
-     |>.map (·.trim)
-     |>.filter (not ∘ String.isEmpty)
+     i.splitLines
      |>.map parseLine
      |>.unzip
-   let left := left.mergeSort (fun l r => l <= r)
-   let right := right.mergeSort (fun l r => l <= r)
-   left.zipWith (fun l r => Int.natAbs (l - r)) right
+   let left := left.mergeSort
+   let right := right.mergeSort
+   left.zipWith (fun l r => l - r) right
+   |>.map Int.natAbs
    |>.sum
 
 #example process exampleInput
@@ -40,16 +39,12 @@ evaluates to 11
 
 def process' (i: String) :=
    let (left, right) :=
-     i
-     |>.splitOn "\n"
-     |>.map (·.trim)
-     |>.filter (not ∘ String.isEmpty)
+     i.splitLines
      |>.map parseLine
      |>.unzip
-  let rMap := right.foldr
-          (fun v (m: Std.HashMap Int Nat) =>
-             m.alter v (fun n => some <| n.getD 0 + 1))
-          .empty
+  let rMap :=
+    flip right.foldr HashMap.empty
+      (fun v m => m.update v (·.get? + 1))
   left
   |>.map (fun v => rMap.getD v 0 * v)
   |>.sum

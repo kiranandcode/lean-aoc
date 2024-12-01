@@ -45,7 +45,7 @@ def process' (i: String) :=
       (fun v m =>
          m.update v (·.get? + 1))
   left
-  |>.map (fun v => rMap.getD? v * v)
+  |>.map (fun v => rMap[v]?.get? * v)
   |>.sum
    
 

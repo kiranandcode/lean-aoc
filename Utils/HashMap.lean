@@ -6,5 +6,7 @@ namespace Std.HashMap
 
   def update (h: HashMap α β) (k: α) (f: Option β -> β) : HashMap α β :=
       h.alter k (fun v => some (f v))
+  
+  def getD? [Inhabited β] (m : HashMap α β) (a : α) : β := m.getD a default
 
 end Std.HashMap

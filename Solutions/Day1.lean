@@ -14,16 +14,14 @@ def exampleInput :=
 
 -- #eval input
 
-def parseLine (line: String) :=
-  let elts := line.splitOn " "
-    |>.filter (not ∘ String.isEmpty)
-    |>.map String.toInt!
-  (elts[0]!, elts[1]!)
+def parseLine (line: String) : Option (Int × Int) := do
+  line.words.map String.toInt!
+  |> fun | [l,r] => some (l,r) | _ => none
 
 def process (i: String) :=
    let (left, right) :=
      i.splitLines
-     |>.map parseLine
+     |>.filterMap parseLine
      |>.unzip
    let left := left.mergeSort
    let right := right.mergeSort
@@ -40,13 +38,14 @@ evaluates to 11
 def process' (i: String) :=
    let (left, right) :=
      i.splitLines
-     |>.map parseLine
+     |>.filterMap parseLine
      |>.unzip
   let rMap :=
     flip right.foldr HashMap.empty
-      (fun v m => m.update v (·.get? + 1))
+      (fun v m =>
+         m.update v (·.get? + 1))
   left
-  |>.map (fun v => rMap.getD v 0 * v)
+  |>.map (fun v => rMap.getD? v * v)
   |>.sum
    
 

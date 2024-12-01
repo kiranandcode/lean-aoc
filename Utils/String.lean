@@ -10,5 +10,10 @@ def splitLines (s: String) : List String :=
    |>.map (·.trim)
    |>.filter (not ∘ String.isEmpty)
 
+def words (s: String) : List String :=
+  s.trim
+  |>.splitOn " "
+  |>.filter (not ∘ String.isEmpty)
+
 end String
 

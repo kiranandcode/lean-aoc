@@ -20,7 +20,9 @@ def exampleInput : String :=
 
 def isSafeSequence (s: List Int) :=
    let diffs := differences s
-   (diffs.all Int.isPos || diffs.all Int.isNeg) && diffs.all (Int.inRange ·.natAbs 1 3)
+   (diffs.all Int.isPos || diffs.all Int.isNeg)
+   && diffs.all (Int.inRange ·.natAbs 1 3)
+
 def process (s: String) :=
    parseInput s
    |>.countP isSafeSequence
@@ -29,21 +31,23 @@ def process (s: String) :=
 #example process <$> input evaluates to 463
 
 def isSafeSequence' (line: List Int) : Bool := 
-   let rec foldSequence (cmp: Int -> Int -> Bool) (ls: List Int) : List (Bool × Int) := 
-         match ls with
-         | [] | [_] =>  []
-         | [v1, v0] =>
-            (if cmp v0 v1 then [(false, v1)] else []) ++ [(true, v0), (true, v1)]
-         | vi :: rest => 
-           foldSequence cmp rest
-           |>.flatMap fun (skipUsed, lastVl) =>
-                 (if cmp lastVl vi then [(skipUsed,vi)] else []) ++
-                 (if skipUsed then [] else [(true, lastVl)])
-   let increasing v0 v1 := v0 < v1 && (v1 - v0) <= 3
-   let decreasing v0 v1 := v0 > v1 && (v0 - v1) <= 3
-   let increasingLs := (foldSequence increasing line.reverse)
-   let decreasingLs := (foldSequence decreasing line.reverse)
-   !increasingLs.isEmpty || !decreasingLs.isEmpty
+   match line with
+   | [] | [_] => true
+   | v0 :: v1 :: rest =>
+     let foldSequence (cmp: Int -> Int -> Bool) : Bool :=
+        let init :=
+          (if cmp v0 v1 then [(false, v1)] else []) ++
+          [(true, v0), (true, v1)]
+        flip rest.foldl init
+          (fun acc v =>
+            acc.flatMap fun (skipUsed, lastVl) =>
+               (if cmp lastVl v then [(skipUsed, v)] else []) ++
+               (if skipUsed then [] else [(true, lastVl)]))
+        |>.isEmpty
+        |>.not
+     let increasing v0 v1 := v0 < v1 && (v1 - v0) <= 3
+     let decreasing v0 v1 := v0 > v1 && (v0 - v1) <= 3
+     foldSequence increasing || foldSequence decreasing
 
 
 #example isSafeSequence' [0, 3, 6] evaluates to true

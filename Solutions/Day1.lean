@@ -25,7 +25,7 @@ def process (i: String) :=
      |>.unzip
    let left := left.mergeSort
    let right := right.mergeSort
-   left.zipWith (fun l r => l - r) right
+   left.zipWith (· - ·) right
    |>.map Int.natAbs
    |>.sum
 

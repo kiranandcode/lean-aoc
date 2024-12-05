@@ -10,6 +10,7 @@ import Utils.Char
 import Utils.Either
 import Utils.Parsec
 import Utils.Array
+import Utils.List
 
 namespace AOC
    def getInput (day: Int) (year : Option Int := .none) := AOC.Network.getInput day (year := year)

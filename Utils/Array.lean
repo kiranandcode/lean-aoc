@@ -2,6 +2,14 @@ import Batteries
 import Utils.Macros
 import Utils.Option
 
+-- def Array.findIdx?  (p : α → Bool) : Array α → (start : Nat := 0) → Option Nat := fun a start => do
+--    for i in [start:a.size] do
+--       if a[i]?.map p |>.getD false then
+--          return i
+--    none
+   
+
+
 structure Array.Diagonals (A: Type) where arr : Array (Array A)
 structure Array.RevDiagonals (A: Type) where arr : Array (Array A)
 

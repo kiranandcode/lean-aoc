@@ -33,4 +33,12 @@ def foldMapM [Monad M] (f : A -> B -> M (C × A)) (init: A) (ls: List B) : M (Li
 def midElement [Inhabited A] (ls: List A) : A :=
    ls[ls.length/2]?.get?
 
+def allPartitions (ls : List A) : List (List (List A)) :=
+   match ls with
+   | [] => [[]]
+   | (h :: t) =>
+   t.allPartitions.flatMap (match · with
+   | [] => [[h] :: []]
+   | h' :: t' => [(h :: h') :: t', [h] :: h' :: t'])
+
 end List

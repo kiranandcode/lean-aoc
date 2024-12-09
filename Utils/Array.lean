@@ -15,7 +15,7 @@ structure Array.RevDiagonals (A: Type) where arr : Array (Array A)
 
 
 instance [Inhabited A] [Monad M] : ForIn M (Array.Diagonals A) (List A) where
-  forIn := fun (⟨a⟩) b f =>  do
+  forIn := fun ⟨a⟩ b f =>  do
   let h := a.size
   let w := a[0]?.map Array.size |>.getD 0
   let mut b := b

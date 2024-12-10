@@ -1,3 +1,3 @@
 import Utils
 
-import Solutions.Day7
+import Solutions.Day10

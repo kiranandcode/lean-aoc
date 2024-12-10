@@ -13,22 +13,38 @@ def testInput := "89010123
 10456732"
 
 abbrev Coord := Nat × Nat
-abbrev Distances := Std.HashMap (Coord × Coord) Nat
+abbrev Grid := Array (Array Nat)
 
-def newDistance (distances: Distances) (i: Coord)  (j: Coord) (k: Coord) : Option Nat := 
-    let ij := distances[(i,j)]?
-    let ik := distances[(i,k)]?
-    let kj := distances[(i,k)]?
-    match ij, ik, kj with
-    | some ij, some ik, some kj => if ik + kj < ij then some (ik + kj) else none
-    | none, some ik, some kj => some (ik + kj)
-    | _, _, _ => .none
+def neigbours (g: Array (Array Nat)) (pos : Nat × Nat) : List (Nat × Nat):=
+    (if pos.fst > 0 then [(pos.fst - 1, pos.snd)] else []) ++
+    (if pos.snd > 0 then [(pos.fst, pos.snd - 1)] else []) ++
+    [(pos.fst + 1, pos.snd), (pos.fst, pos.snd + 1)]
+    |>.filter (fun pos => pos.fst < g.size && pos.snd < g[0]!.size)
 
-#eval do
-   let input := testInput
+partial def noReachableNines (g: Grid) (start: Coord) := Id.run $ do
+   let mut ninesFound := Std.HashSet.empty
+   let mut visited := Std.HashSet.empty
+   let mut queue := #[start]
+   while !queue.isEmpty do
+      let elt := queue.back!
+      queue := queue.pop
+      let eltVl := g.get2D! elt
+      if eltVl == 9 then
+         ninesFound := ninesFound.insert elt
+         continue
+      if visited.contains elt then
+         continue
+      visited := visited.insert elt
+      for neighbour in (neigbours g elt).toArray do
+         let neighbourVl := g.get2D! neighbour
+         if neighbourVl == eltVl + 1 then
+             queue := queue.push neighbour
+
+   return ninesFound.size
+
+def process (input: String) := Id.run $ do
    let g := input.toGrid
             |>.map (Array.map Char.toDigit)
-   let mut distances : Distances := .empty
    let mut zeroes := #[]
    let mut nines := #[]
    
@@ -38,23 +54,50 @@ def newDistance (distances: Distances) (i: Coord)  (j: Coord) (k: Coord) : Optio
          zeroes := zeroes.push i
       if iVl == 9 then
          nines := nines.push i
-      for j in [0:g.size, 0:g[0]!.size] do
-          let jVl := g.get2D! j
-          if iVl == jVl + 1 then
-             distances := distances.insert (i,j) 1
-
-   for k in [0:g.size, 0:g[0]!.size] do
-     for i in [0:g.size, 0:g[0]!.size] do
-        for j in [0:g.size, 0:g[0]!.size] do
-          if let some dist := newDistance distances i j k then
-            distances := distances.insert (i,j) dist
    let mut scores := 0
    for zero in zeroes do
-      let mut trailHeadScore := 0
-      for nine in nines do
-         if distances.contains (nine, zero) then
-           trailHeadScore := trailHeadScore + 1
-      println! "score for trailhead {zero} is {trailHeadScore}"
+      let trailHeadScore := noReachableNines g zero
       scores := scores + trailHeadScore
    return scores
    
+#example process testInput evaluates to 36
+#example process <$> input evaluates to 510
+
+partial def noDistinctReachableNines (g: Grid) (start: Coord) := Id.run $ do
+   let mut ninesFound := Std.HashMap.empty
+   let mut queue := #[start]
+   while !queue.isEmpty do
+      let elt := queue.back!
+      queue := queue.pop
+      let eltVl := g.get2D! elt
+      if eltVl == 9 then
+         ninesFound := ninesFound.update elt (·.get? + 1)
+         continue
+      for neighbour in (neigbours g elt).toArray do
+         let neighbourVl := g.get2D! neighbour
+         if neighbourVl == eltVl + 1 then
+             queue := queue.push neighbour
+
+   return ninesFound.values.sum
+
+def process' (input: String) := Id.run $ do
+   let g := input.toGrid
+            |>.map (Array.map Char.toDigit)
+   let mut zeroes := #[]
+   let mut nines := #[]
+   
+   for i in [0:g.size, 0:g[0]!.size] do
+      let iVl := g.get2D! i
+      if iVl == 0 then
+         zeroes := zeroes.push i
+      if iVl == 9 then
+         nines := nines.push i
+   let mut scores := 0
+   for zero in zeroes do
+      let trailHeadScore := noDistinctReachableNines g zero
+      scores := scores + trailHeadScore
+   return scores
+
+
+#example process' testInput evaluates to 81
+#example process' <$> input evaluates to 1058

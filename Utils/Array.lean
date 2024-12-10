@@ -13,7 +13,6 @@ import Utils.Option
 structure Array.Diagonals (A: Type) where arr : Array (Array A)
 structure Array.RevDiagonals (A: Type) where arr : Array (Array A)
 
-
 instance [Inhabited A] [Monad M] : ForIn M (Array.Diagonals A) (List A) where
   forIn := fun ⟨a⟩ b f =>  do
   let h := a.size
@@ -91,6 +90,15 @@ def Array.revDiagonals [Inhabited A] (arr: Array (Array A)) : List (List A) := I
    for diagonal in arr.revDiagonalArrs do
       ls := ls.cons diagonal
    return ls.reverse
+
+def Array.get2D! [Inhabited A] (arr: Array (Array A)) (i: Nat × Nat) : A :=
+   arr[i.fst]![i.snd]!
+
+def Array.set2D! [Inhabited A] (arr: Array (Array A)) (i: Nat × Nat) (v: A) : Array (Array A) :=
+    arr.set! i.fst (arr[i.fst]!.set! i.snd v)
+
+def Array.get2D? (arr: Array (Array A)) (i: Nat × Nat) : Option A := do
+   (<- arr[i.fst]?)[i.snd]?
 
 #example (runST $ fun _ => do
   let mut ls := ([]: List (List Nat))

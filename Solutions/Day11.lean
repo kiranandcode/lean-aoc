@@ -57,7 +57,7 @@ partial def computeSize (depth: Nat) (cache : Cache) (sizeCache: SizeCache) (elt
     | some res => (res, sizeCache)
 
 
-def process' (n: Nat) (input: String) : IO Nat := do
+def process' (n: Nat) (input: String) : Nat := Id.run $ do
   let ls := input.words.map String.toNat!
   let mut currentSet := Std.HashSet.ofList ls
   let mut cache := Std.HashMap.empty
@@ -76,9 +76,4 @@ def process' (n: Nat) (input: String) : IO Nat := do
      sizeCache := res.snd
   return size
 
-
-def main: IO Unit := do
-   let input <- input
-   let res <- process' 75 input
-   println! "final result: {res}"
-
+#example process' 75 <$> input evaluates to 232454623677743

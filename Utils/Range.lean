@@ -41,7 +41,3 @@ macro_rules
 end Std
 
 
-#eval (do
-   for i in [0:10, 1:20] do
-      println! "{i}"
-   : IO Unit)

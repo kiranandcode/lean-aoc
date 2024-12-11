@@ -14,4 +14,11 @@ def noDigits (n: Nat) := Id.run $ do
 def combine (n1 n2: Nat) : Nat :=
    n1 * 10^(n2.noDigits) + n2
 
+def splitDigits (n: Nat) : Nat × Nat :=
+  let exp := 10^(n.noDigits / 2)
+  let rhs := n / exp
+  let lhs := n - rhs * exp
+  (rhs, lhs)
+
 end Nat
+

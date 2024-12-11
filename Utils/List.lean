@@ -69,8 +69,8 @@ private def takeFindInternal (p : α → Bool) (acc: List α) : List α → Opti
 def takeFind? (p : α → Bool) : List α → Option (α × List α) :=
   takeFindInternal p []
 
-abbrev Take2 := List
-def take2 (ls: List A) : Take2 A := ls
+structure Take2 (A: Type) where data : List A
+def take2 (ls: List A) : Take2 A := ⟨ls⟩
 
 end List
 
@@ -88,8 +88,7 @@ instance [Monad M] : ForIn M (List.Take2 A) (A × A) where
              | .done v => return v
              | .yield b =>
                  loop b rest
-      loop b a
-
+      loop b a.data
 
 #eval
   Id.run $ do

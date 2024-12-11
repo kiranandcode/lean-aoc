@@ -35,14 +35,14 @@ partial def noReachableNines (g: Grid) (start: Coord) := Id.run $ do
       if visited.contains elt then
          continue
       visited := visited.insert elt
-      for neighbour in (neigbours g elt).toArray do
+      for neighbour in (neigbours g elt) do
          let neighbourVl := g.get2D! neighbour
          if neighbourVl == eltVl + 1 then
              queue := queue.push neighbour
 
    return ninesFound.size
 
-def process (input: String) := Id.run $ do
+def process (input: String): Nat := Id.run $ do
    let g := input.toGrid
             |>.map (Array.map Char.toDigit)
    let mut zeroes := #[]
@@ -73,7 +73,7 @@ partial def noDistinctReachableNines (g: Grid) (start: Coord) := Id.run $ do
       if eltVl == 9 then
          ninesFound := ninesFound.update elt (·.get? + 1)
          continue
-      for neighbour in (neigbours g elt).toArray do
+      for neighbour in neigbours g elt do
          let neighbourVl := g.get2D! neighbour
          if neighbourVl == eltVl + 1 then
              queue := queue.push neighbour

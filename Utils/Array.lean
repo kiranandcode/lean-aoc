@@ -9,7 +9,6 @@ import Utils.Option
 --    none
    
 
-
 structure Array.Diagonals (A: Type) where arr : Array (Array A)
 structure Array.RevDiagonals (A: Type) where arr : Array (Array A)
 
@@ -116,4 +115,10 @@ def Array.get2D? (arr: Array (Array A)) (i: Nat × Nat) : Option A := do
    [2, 5],
    [1]] : List (List Nat))
 
+
+def Array.neigboursOf (g: Array (Array A)) (pos : Nat × Nat) : List (Nat × Nat):=
+    (if pos.fst > 0 then [(pos.fst - 1, pos.snd)] else []) ++
+    (if pos.snd > 0 then [(pos.fst, pos.snd - 1)] else []) ++
+    [(pos.fst + 1, pos.snd), (pos.fst, pos.snd + 1)]
+    |>.filter (fun pos => pos.fst < g.size && pos.snd < g[0]!.size)
 

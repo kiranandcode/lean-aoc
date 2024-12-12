@@ -15,11 +15,6 @@ def testInput := "89010123
 abbrev Coord := Nat × Nat
 abbrev Grid := Array (Array Nat)
 
-def neigbours (g: Array (Array Nat)) (pos : Nat × Nat) : List (Nat × Nat):=
-    (if pos.fst > 0 then [(pos.fst - 1, pos.snd)] else []) ++
-    (if pos.snd > 0 then [(pos.fst, pos.snd - 1)] else []) ++
-    [(pos.fst + 1, pos.snd), (pos.fst, pos.snd + 1)]
-    |>.filter (fun pos => pos.fst < g.size && pos.snd < g[0]!.size)
 
 partial def noReachableNines (g: Grid) (start: Coord) := Id.run $ do
    let mut ninesFound := Std.HashSet.empty
@@ -35,7 +30,7 @@ partial def noReachableNines (g: Grid) (start: Coord) := Id.run $ do
       if visited.contains elt then
          continue
       visited := visited.insert elt
-      for neighbour in (neigbours g elt) do
+      for neighbour in (g.neigboursOf elt) do
          let neighbourVl := g.get2D! neighbour
          if neighbourVl == eltVl + 1 then
              queue := queue.push neighbour
@@ -73,7 +68,7 @@ partial def noDistinctReachableNines (g: Grid) (start: Coord) := Id.run $ do
       if eltVl == 9 then
          ninesFound := ninesFound.update elt (·.get? + 1)
          continue
-      for neighbour in neigbours g elt do
+      for neighbour in g.neigboursOf elt do
          let neighbourVl := g.get2D! neighbour
          if neighbourVl == eltVl + 1 then
              queue := queue.push neighbour

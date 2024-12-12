@@ -19,15 +19,17 @@ MIIIIIJJEE
 MIIISIJEEE
 MMMISSJEEE"
 
---        (-1,0)
---  (0, -1)      (0, 1)
---        (1, 0)
-
 abbrev HSet A [BEq A] [Hashable A] := Std.HashSet A
 abbrev HMap A B [BEq A] [Hashable A] := Std.HashMap A B
 abbrev Grid := Array (Array Char)
 abbrev Coord := Nat × Nat
 abbrev ICoord := Int × Int
+
+instance : Min ICoord where
+  min p1 p2 :=
+    if p1.fst < p2.fst || (p1.fst == p2.fst && p1.snd < p2.snd)
+    then p1
+    else p2
 
 def Coord.toICoord (pos: Coord) : ICoord := 
    ((pos.fst : Int), (pos.snd : Int))
@@ -117,125 +119,55 @@ def process (input : String) := Id.run $ do
 #example process testInput2 evaluates to 1930
 #example process <$> input evaluates to 1549354
 
-def Std.HashMap.first? [Hashable A] [BEq A] (map: HMap A B) : Option A := 
-   match map.foldM (fun _ (k: A) _ => .error k) () with 
-   | Except.ok () => none
-   | Except.error e => e
-
-def Std.HashMap.first! [Inhabited A] [Hashable A] [BEq A] (map: HMap A B) : A :=
-   map.first?.get!
-
 abbrev PCoordMap := HMap ICoord Nat
 
-def visualise (pcoords: PCoordMap) : IO Unit := do
-   let coords := pcoords.keys
-   let ys := coords.map (·.fst) 
-   let xs := coords.map (·.snd)
-   let ymin := ys.min?.get!
-   let ymax := ys.max?.get!
-   let xmin := xs.min?.get!
-   let xmax := xs.max?.get!
-   let ywidth := ymax - ymin + 1
-   let xwidth := xmax - xmin + 1
-   let mut arr := Array.mkArray ywidth.toNat (Array.mkArray xwidth.toNat ' ')
-   for j in [0:ywidth.toNat] do
-      for i in [0:xwidth.toNat] do
-         let coord := ((j : Int) + ymin, (i: Int) + xmin)
-         if let some n := pcoords[coord]? then
-             arr := arr.set2D! ((coord.fst - ymin).toNat, (coord.snd - xmin).toNat)
-                (Char.ofNat ('0'.toNat + n))
-   for row in arr do
-      println! "  {row.toList}"
-   return
+def ICoord.addDirection (c: ICoord) : Direction -> ICoord
+| .Up => (c.fst - 1, c.snd)
+| .Down => (c.fst + 1, c.snd)
+| .Left => (c.fst, c.snd - 1)
+| .Right => (c.fst, c.snd + 1)
 
-def computeNoSides (perimeterCoords : PCoordMap) (region: HSet Coord) : IO Nat := do
-  let region := region.toList.map Coord.toICoord |> Std.HashSet.ofList
-  -- okay, here's the plan, we have this list of all coords on the perimeter
-  -- we're going to iteratively remove them until no remain
+def computeNoSides (region : HSet Coord) := Id.run $ do
+  let region := region.toList.map Coord.toICoord
+  let mut outerCoords :=
+    region.filter (fun v => neigbours v |>.any (not $ region.contains ·))
+    |>.flatMap (fun v =>
+       Directions.filter (fun d => not $ region.contains (v.addDirection d))
+       |>.map (fun d => (v, d))
+    )
+    |> Std.HashSet.ofList
   let mut noSides := 0
-  let mut perimeterCoords := perimeterCoords
-  -- remove coord from the map
-  let dropCoord (map : PCoordMap) (coord: ICoord) :=
-     let map := map.update coord (·.get? - 1)
-     if map[coord]?.get? == 0
-     then map.erase coord
-     else map
-  let mut coordDirs : HMap ICoord (HSet ICoord) := .empty
-
-  while !perimeterCoords.isEmpty do
-     println! "at start of iteration {noSides}:"
-     visualise perimeterCoords
-     -- retrieve a random coord on the perimeter
-     let coord := perimeterCoords.first!
-     perimeterCoords := dropCoord perimeterCoords coord
+  while !outerCoords.isEmpty do
      noSides := noSides + 1
-     -- find neighbour that is in perimeter coords, plus we have not considered this direction
-     let inRegionCoord :=
-       neigbours coord
-       |>.find? (fun neigbour =>
-          let dir := neigbour.sub coord |>.swap
-          region.contains neigbour
-          && !(coordDirs[coord]?.get?.contains dir
-              || coordDirs[coord]?.get?.contains dir.negate)
-          && (perimeterCoords.contains (coord.add dir) ||
-              perimeterCoords.contains (coord.add dir.negate)))
-     if let some inRegionCoord := inRegionCoord then
-        -- store direction to dir
-        let regionDir := inRegionCoord.sub coord
-        -- work out direction of this path
-        let dir := regionDir  |>.swap
-        coordDirs := coordDirs.update coord (·.get?.insert dir)
-        -- println! "at coord {coord} chose direction {dir}"
-        let revdir := dir.negate
-        let mut nextCoord := coord.add dir
-        -- repeatedly remove the coords in this direction
-        while perimeterCoords.contains nextCoord && region.contains (nextCoord.add regionDir) do
-            perimeterCoords := dropCoord perimeterCoords nextCoord
-            coordDirs := coordDirs.update nextCoord (·.get?.insert dir)
-            nextCoord := nextCoord.add dir
-        nextCoord := coord.add revdir
-        -- repeatedly remove the coords in this direction
-        while perimeterCoords.contains nextCoord && region.contains (nextCoord.add regionDir) do
-            perimeterCoords := dropCoord perimeterCoords nextCoord
-            coordDirs := coordDirs.update nextCoord (·.get?.insert dir)
-            nextCoord := nextCoord.add revdir
+     -- pick a coord on the outline and direction to edge
+     let (coord, edir) := outerCoords.first!
+     outerCoords := outerCoords.erase (coord, edir)
+     -- extract directions to move
+     let dir := edir.turnLeft
+     let revdir := edir.turnRight
 
+     -- first move left
+     let mut nextCoord := coord.addDirection dir
+     while outerCoords.contains (nextCoord, edir) do
+        outerCoords := outerCoords.erase (nextCoord, edir)
+        nextCoord := nextCoord.addDirection dir
+     -- then move right
+     nextCoord := coord.addDirection revdir
+     while outerCoords.contains (nextCoord, edir) do
+        outerCoords := outerCoords.erase (nextCoord, edir)
+        nextCoord := nextCoord.addDirection revdir
+     -- we have removed this side from the list of outercoords, move on
+  
   return noSides
 
-
-def text :=
-"XXXXX
-X..X.
-XX.X.
-X..XX
-XXXXX"
-
---  22222
--- 3XXXXX
--- 3X  XX
--- 3XX  X
--- 3X44XX
--- 3XXXXX
---  11111
-
-#eval
-  let g := text.toGrid
-  let regions := computeRegions g
-  let pCoords := computePerimeterCoords regions[0]!.snd
-  computeNoSides pCoords regions[0]!.snd
-
-def process' (input : String) : IO Nat := do
+def process' (input : String) : Nat := 
   let g := input.toGrid
   let regions := computeRegions g
 
-  let res <- regions.mapM (fun (r: Char × HSet Coord) => do
-       let area := r.snd.size
-       let pCoords := computePerimeterCoords r.snd
-       let noSides <- computeNoSides pCoords r.snd
-       -- println! "A region of {r.fst} plants with price {area} * {noSides} = {area * noSides}"
-       return area * noSides
+  regions.map (fun (r: Char × HSet Coord) => 
+       r.snd.size * computeNoSides r.snd
      )
-  return res |>.foldl Nat.add 0
+  |>.foldl Nat.add 0
 
 
 def testInput3 := "AAAAAA
@@ -245,9 +177,7 @@ ABBAAA
 ABBAAA
 AAAAAA"
 
--- #example process' testInput evaluates to 80
--- #eval do let i <- input; process' i -- evaluates to 1206
--- 954835
--- #example process' testInput3 evaluates to 368
--- #example process' <$> input evaluates to 922682
+#example process' testInput evaluates to 80
+#example process' <$> input evaluates to 937032
+#example process' testInput3 evaluates to 368
 

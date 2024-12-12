@@ -4,6 +4,7 @@ import Utils.File
 import Utils.Network
 import Utils.Macros
 import Utils.HashMap
+import Utils.HashSet
 import Utils.Option
 import Utils.Int
 import Utils.Char
@@ -13,6 +14,7 @@ import Utils.Array
 import Utils.List
 import Utils.Nat
 import Utils.Range
+import Utils.Direction
 
 namespace AOC
    def getInput (day: Int) (year : Option Int := .none) := AOC.Network.getInput day (year := year)

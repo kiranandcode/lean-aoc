@@ -31,3 +31,11 @@ end Std.HashMap
          |>.transitiveClosure
          |>.toList
          evaluates to  [('e', ['f']), ('c', ['f', 'e', 'd']), ('a', ['f', 'e', 'd', 'c', 'b'])]
+
+def Std.HashMap.first? [Hashable A] [BEq A] (map: Std.HashMap A B) : Option A := 
+   match map.foldM (fun _ (k: A) _ => .error k) () with 
+   | Except.ok () => none
+   | Except.error e => e
+
+def Std.HashMap.first! [Inhabited A] [Hashable A] [BEq A] (map: Std.HashMap A B) : A :=
+   map.first?.get!

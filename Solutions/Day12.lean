@@ -58,7 +58,7 @@ def computeRegionOf (g: Grid) (c: Coord) (seen: HSet Coord) := Id.run $ do
   
    return elts   
 
-def computePerimeter  (region: HSet Coord) :=
+def computePerimeterCoords  (region: HSet Coord) : HMap ICoord Nat :=
    -- going to do this in a dumb but easy way
    -- every point has a perimter of its neigbours
    -- take the union of all of those, subtract the region itself and voila
@@ -69,9 +69,11 @@ def computePerimeter  (region: HSet Coord) :=
      |>.filter (not $ region.contains ·)
      |>.foldl insert acc
    ) .empty
+
+def computePerimeter (region : HSet Coord) : Nat :=
+   computePerimeterCoords region
    |>.values
    |>.sum
-
 
 def computeRegions (g: Grid) := Id.run $ do
   let mut regions := #[]
@@ -101,5 +103,25 @@ def process (input : String) := Id.run $ do
 #example process testInput2 evaluates to 1930
 #example process <$> input evaluates to 1549354
 
+def HashMap.first? [Hashable A] [BEq A] (map: HMap A B) := Id.run $ do
+  try (
+     map.foldM (fun k v => do
+       throw k
+     )
+  ) catch k => k
 
+abbrev PCoordMap := HMap ICoord Nat
+def computeNoSides (perimeterCoords : PCoordMap) := Id.run $ do
+  -- okay, here's the plan, we have this list of all coords on the perimeter
+  -- we're going to iteratively remove them until no remain
+  let mut noSides := 0
+  let mut perimeterCoords := perimeterCoords
+  -- remove coord from the map
+  let dropCoord (map : PCoordMap) (coord: ICoord) :=
+     let map := map.update coord (·.get? - 1)
+     if map[coord]?.get? == 0
+     then map.erase coord
+     else map
 
+  while !perimeterCoords.isEmpty do
+     let coord := 

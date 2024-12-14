@@ -15,6 +15,7 @@ import Utils.List
 import Utils.Nat
 import Utils.Range
 import Utils.Direction
+import Utils.Coord
 
 namespace AOC
    def getInput (day: Int) (year : Option Int := .none) := AOC.Network.getInput day (year := year)

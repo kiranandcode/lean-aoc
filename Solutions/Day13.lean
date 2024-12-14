@@ -18,12 +18,6 @@ Button A: X+69, Y+23
 Button B: X+27, Y+71
 Prize: X=18641, Y=10279"
 
-abbrev ICoord := (Int × Int)
-
-def ICoord.x (c: ICoord) : Int := c.fst
-def ICoord.y (c: ICoord) : Int := c.snd
-
-
 structure Configuration where
    A: ICoord
    B: ICoord
@@ -33,13 +27,6 @@ deriving Inhabited, Repr, BEq, Hashable
 section Parsing 
 open Std.Internal.Parsec
 open Std.Internal.Parsec.String
-
-def int : Parser Int :=
-     (skipChar '+' *> digits |> Functor.map Int.ofNat)
- <|> (skipChar '-' *> digits  |> Functor.map Int.ofNat |> Functor.map Int.neg)
- <|> (digits |> Functor.map Int.ofNat)
-
-
 
 def parseButton : Parser (Int × Int) := do
    let _ <- skipString "Button" *> ws *> any

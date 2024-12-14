@@ -22,29 +22,6 @@ MMMISSJEEE"
 abbrev HSet A [BEq A] [Hashable A] := Std.HashSet A
 abbrev HMap A B [BEq A] [Hashable A] := Std.HashMap A B
 abbrev Grid := Array (Array Char)
-abbrev Coord := Nat × Nat
-abbrev ICoord := Int × Int
-
-instance : Min ICoord where
-  min p1 p2 :=
-    if p1.fst < p2.fst || (p1.fst == p2.fst && p1.snd < p2.snd)
-    then p1
-    else p2
-
-def Coord.toICoord (pos: Coord) : ICoord := 
-   ((pos.fst : Int), (pos.snd : Int))
-
-def ICoord.negate (p1: ICoord) : ICoord := 
-   (- p1.fst, - p1.snd)
-
-def ICoord.sub (p1: ICoord) (p2: ICoord) : ICoord := 
-   (p1.fst - p2.fst, p1.snd - p2.snd)
-
-def ICoord.add (p1: ICoord) (p2: ICoord) : ICoord := 
-   (p1.fst + p2.fst, p1.snd + p2.snd)
-
-def ICoord.swap (p1: ICoord) : ICoord :=
-   (p1.snd, p1.fst)
 
 def neigbours (pos: ICoord) : List ICoord :=
    [(pos.fst - 1, pos.snd), (pos.fst, pos.snd - 1),

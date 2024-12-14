@@ -14,4 +14,9 @@ partial def allMatchesInt {V} (P: Parser V) (acc: Array V) : Parser (List V) :=
 
 def allMatches {V} (P: Parser V) := allMatchesInt P #[]
 
+def int : Parser Int :=
+     (skipChar '+' *> digits |> Functor.map Int.ofNat)
+ <|> (skipChar '-' *> digits  |> Functor.map Int.ofNat |> Functor.map Int.neg)
+ <|> (digits |> Functor.map Int.ofNat)
+
 end Std.Internal.Parsec

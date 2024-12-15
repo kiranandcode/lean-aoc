@@ -99,6 +99,17 @@ def Array.set2D! [Inhabited A] (arr: Array (Array A)) (i: Nat × Nat) (v: A) : A
 def Array.get2D? (arr: Array (Array A)) (i: Nat × Nat) : Option A := do
    (<- arr[i.fst]?)[i.snd]?
 
+def Array.find2D? (arr: Array (Array A)) (f: A -> Bool) : Option (Nat × Nat) := do
+   let mut i := 0
+   for row in arr do
+      let mut j := 0
+      for elt in row do
+         if f elt then
+            return (i,j)
+         j := j + 1
+      i := i + 1
+   none
+
 #example (runST $ fun _ => do
   let mut ls := ([]: List (List Nat))
   for i in (#[#[ 1, 2, 3, 4],

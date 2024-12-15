@@ -1,4 +1,5 @@
 import Batteries
+import Utils.Coord
 
 inductive Direction where
 | Up
@@ -33,3 +34,23 @@ def Direction.turnAround : Direction -> Direction
 | .Right => .Left
 
 def Directions : List Direction := [.Up, .Down, .Left, .Right]
+
+def Direction.ofChar? : Char -> Option Direction
+| '^' => .some .Up
+| '>' => .some .Right
+| '<' => .some .Left
+| 'v' => .some .Down
+| _ => .none
+
+def Direction.toICoord : Direction -> ICoord
+| .Up => (-1,0)
+| .Down => (1,0)
+| .Left => (0,-1)
+| .Right => (0,1)
+
+def Direction.move (coord: Coord) : Direction -> Option Coord
+| .Up => if coord.fst > 0 then some (coord.fst-1,coord.snd) else none
+| .Down => some (coord.fst+1,coord.snd)
+| .Left => if coord.snd > 0 then some (coord.fst,coord.snd - 1) else none
+| .Right => some (coord.fst,coord.snd + 1)
+

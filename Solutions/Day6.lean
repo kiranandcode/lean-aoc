@@ -2,7 +2,6 @@ import Batteries
 import Utils
 
 abbrev Grid := Array (Array Char)
-abbrev Coord := (Nat × Nat)
 
 def input := AOC.getInput 6
 def testInput :=
@@ -17,20 +16,6 @@ def testInput :=
 #.........
 ......#..."
 
-
-
-def Direction.ofChar? : Char -> Option Direction
-| '^' => .some .Up
-| '>' => .some .Right
-| '<' => .some .Left
-| 'v' => .some .Down
-| _ => .none
-
-def Direction.move (coord: Coord) : Direction -> Option Coord
-| .Up => if coord.fst > 0 then some (coord.fst-1,coord.snd) else none
-| .Down => some (coord.fst+1,coord.snd)
-| .Left => if coord.snd > 0 then some (coord.fst,coord.snd - 1) else none
-| .Right => some (coord.fst,coord.snd + 1)
 
 def isDirection (c: Char) := c == '^' || c == '>' || c == '<' || c == '>'
 

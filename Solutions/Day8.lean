@@ -18,32 +18,23 @@ def testInput := "............
 ............"
 
 abbrev Grid := Array (Array Char)
-abbrev Coord := Int × Int
 
 def Int.sqrt (n: Int) : Int := 
    if n < 0
    then - n.natAbs.sqrt
    else n.natAbs.sqrt
 
-def Coord.x (v: Coord) := Prod.fst v
-def Coord.y (v: Coord) := Prod.snd v
 
-def Coord.sub (v1: Coord) (v2: Coord) : Coord := (v1.x - v2.x, v1.y - v2.y)
-def Coord.add (v1: Coord) (v2: Coord) : Coord := (v1.x + v2.x, v1.y + v2.y)
-
-def Coord.antinode (v1: Coord) (v2: Coord) :=
+def ICoord.antinode (v1: ICoord) (v2: ICoord) :=
    let d := v2.sub v1
    v2.add d
 
-def inBounds (g: Grid) (c: Coord) :=
-   c.x >= 0 && c.y >= 0 && c.y < g.size && c.x < g[0]!.size
-
-def isEmpty (g: Grid) (c: Coord) :=
+def isEmpty (g: Grid) (c: ICoord) :=
    g[c.y.natAbs]![c.x.natAbs]! == '.'
 
-def getAntinodes (g: Grid) (p1: Coord) (p2: Coord) :=
+def getAntinodes (g: Grid) (p1: ICoord) (p2: ICoord) : List ICoord :=
    [p1.antinode p2, p2.antinode p1]
-   |>.filter (inBounds g)
+   |>.filter g.inBounds
    -- |>.filter (isEmpty g)
 
 
@@ -58,7 +49,7 @@ def extractAntennae (g: Grid)  : Std.HashMap Char (List (Int × Int)) := Id.run 
 def process (input: String) : Nat := Id.run $ do
   let g := input.toGrid
   let mut antennae := extractAntennae g
-  let mut antinodes : Std.HashSet Coord := Std.HashSet.empty
+  let mut antinodes : Std.HashSet ICoord := Std.HashSet.empty
   for (_, coords) in antennae do
      let coords := coords.toArray
      for i in [0:coords.size] do
@@ -74,17 +65,17 @@ def process (input: String) : Nat := Id.run $ do
 
 
 -- yes could compute this with maths, but loops are easier
-partial def getAllAntinodes (g: Grid) (p1: Coord) (p2: Coord) := Id.run $ do
+partial def getAllAntinodes (g: Grid) (p1: ICoord) (p2: ICoord) := Id.run $ do
    let mut antiNodes := #[p1, p2]
    let diff := p2.sub p1
    let mut current := p2.add diff
-   while inBounds g current do
+   while g.inBounds current do
       antiNodes := antiNodes.push current
       current := current.add diff
 
    let diff := p1.sub p2
    current := p1.add diff
-   while inBounds g current do
+   while g.inBounds current do
       antiNodes := antiNodes.push current
       current := current.add diff
 
@@ -93,7 +84,7 @@ partial def getAllAntinodes (g: Grid) (p1: Coord) (p2: Coord) := Id.run $ do
 def process' (input: String) : Nat := Id.run $ do
   let g := input.toGrid
   let mut antennae := extractAntennae g
-  let mut antinodes : Std.HashSet Coord := Std.HashSet.empty
+  let mut antinodes : Std.HashSet ICoord := Std.HashSet.empty
   for (_, coords) in antennae do
      let coords := coords.toArray
      for i in [0:coords.size] do

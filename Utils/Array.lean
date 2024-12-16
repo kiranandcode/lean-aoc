@@ -1,6 +1,7 @@
 import Batteries
 import Utils.Macros
 import Utils.Option
+import Utils.Coord
 
 -- def Array.findIdx?  (p : α → Bool) : Array α → (start : Nat := 0) → Option Nat := fun a start => do
 --    for i in [start:a.size] do
@@ -133,3 +134,5 @@ def Array.neigboursOf (g: Array (Array A)) (pos : Nat × Nat) : List (Nat × Nat
     [(pos.fst + 1, pos.snd), (pos.fst, pos.snd + 1)]
     |>.filter (fun pos => pos.fst < g.size && pos.snd < g[0]!.size)
 
+def Array.inBounds (g: Array (Array A)) (c: Coord) :=
+   c.x >= 0 && c.y >= 0 && c.y < g.size && c.x < g[0]!.size

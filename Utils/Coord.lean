@@ -7,6 +7,12 @@ deriving Repr, BEq, Inhabited, Hashable
 def ICoord := Int × Int
 deriving Repr, BEq, Inhabited, Hashable
 
+instance : ToString ICoord where
+  toString l := s!"({l.fst},{l.snd})"
+
+instance : ToString Coord where
+  toString l := s!"({l.fst},{l.snd})"
+
 instance : Min ICoord where
   min p1 p2 :=
     if p1.fst < p2.fst || (p1.fst == p2.fst && p1.snd < p2.snd)

@@ -104,3 +104,8 @@ private def List.insertSortedTR (ls : List A) (leq: A -> A -> Bool) (x: A) (acc:
 
 def List.insertSorted (leq: A -> A -> Bool) (x: A) (ls : List A) : List A :=
    ls.insertSortedTR leq x []
+
+@[inline]
+def List.flatMapM  {M: Type -> Type}  [Monad M]
+   (a : List α) (b : α → M (List β)) : M (List β) := do
+   Functor.map flatten (mapM b a)

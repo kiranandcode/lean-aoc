@@ -2,7 +2,7 @@ import Batteries
 
 namespace String
 def concat (s : List String) (sepBy := "") : String :=
-   s.foldl (fun acc v => acc ++ sepBy ++ v) ""
+   s.foldl (fun acc v => if acc.isEmpty then v else acc ++ sepBy ++ v) ""
 
 
 def splitLines (s: String) : List String :=

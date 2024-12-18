@@ -97,6 +97,13 @@ instance [Monad M] : ForIn M (List.Take2 A) (A × A) where
       acc := (acc.push (a,b))
     return acc
 
+def List.Take2.toList (t: List.Take2 A) : List (A × A) := Id.run $ do
+    let mut ls := #[]
+    for (l,r) in t do
+       ls := ls.push (l,r)
+    return ls.toList
+       
+
 private def List.insertSortedTR (ls : List A) (leq: A -> A -> Bool) (x: A) (acc: List A) : List A :=
   match ls with
   | [] => acc.reverseAux [x]

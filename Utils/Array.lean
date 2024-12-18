@@ -2,7 +2,7 @@ import Batteries
 import Utils.Macros
 import Utils.Option
 import Utils.Coord
-
+import Utils.String
 -- def Array.findIdx?  (p : α → Bool) : Array α → (start : Nat := 0) → Option Nat := fun a start => do
 --    for i in [start:a.size] do
 --       if a[i]?.map p |>.getD false then
@@ -136,3 +136,6 @@ def Array.neigboursOf (g: Array (Array A)) (pos : Nat × Nat) : List (Nat × Nat
 
 def Array.inBounds (g: Array (Array A)) (c: Coord) :=
    c.x >= 0 && c.y >= 0 && c.y < g.size && c.x < g[0]!.size
+
+def Array.visualise (g: Array (Array Char)) :=
+  String.concat (sepBy := "\n") (g.toList.map (fun row => row.toList.asString))

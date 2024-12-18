@@ -27,9 +27,6 @@ def neighbours (g: Grid) (p: Coord × Direction) : List ((Coord × Direction) ×
    [((p.fst, p.snd.turnRight), 1000),((p.fst, p.snd.turnLeft), 1000)]   
   |>.filter (fun (p,_) => g.inBounds p.fst && g.get2D! p.fst != '#')
 
-def visualise (g: Grid) :=
-  for row in g do
-    println! "{row.toList.asString}"
 
 def djikstra (g: Grid) (init: (Coord × Direction)) (endPos: Coord) : Nat := Id.run $ do
    let mut scores : HMap (Coord × Direction) Nat :=

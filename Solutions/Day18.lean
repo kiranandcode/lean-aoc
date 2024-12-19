@@ -111,5 +111,8 @@ def solve' (w h: Nat) (input: String) : Coord := Id.run $ do
 
 #example solve' 7 7 testInput evaluates to (6,1)
 def main :IO Unit := do
-   let res <- solve' 71 71 <$> input
-   println!"{res}"
+   let res <- solve' 71 71 <$> input 
+  println!"{res}"
+
+
+

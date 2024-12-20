@@ -1,4 +1,4 @@
 import Utils
 
-import Solutions.Day19
+import Solutions.Day20
 

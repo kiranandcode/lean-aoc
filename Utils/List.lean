@@ -116,3 +116,7 @@ def List.insertSorted (leq: A -> A -> Bool) (x: A) (ls : List A) : List A :=
 def List.flatMapM  {M: Type -> Type}  [Monad M]
    (a : List α) (b : α → M (List β)) : M (List β) := do
    Functor.map flatten (mapM b a)
+
+def List.counter {A} [BEq A] [Hashable A] (ls: List A) : Std.HashMap A Nat :=
+   ls.foldl (fun map v => map.alter v (fun e => some (e.get? + 1)))
+   .empty

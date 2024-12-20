@@ -3,7 +3,8 @@ import Utils
 
 def input := AOC.getInput 20
 
-def testInput := "###############
+def testInput :=
+"###############
 #...#...#.....#
 #.#.#.#.#.###.#
 #S#...#.#.#...#
@@ -65,7 +66,7 @@ def computeSavingsLonger (g: Grid) (costs: HMap Coord Int) (savings: HMap (Coord
    let mut coords : HSet Coord := g.neigboursOf startCoord
                  |>.filter (g.get2D! · == '#')
                  |> Std.HashSet.ofList
-   while step < 20 do
+   while step < 21 do
       step := step + 1
       let mut coords' := Std.HashSet.empty
       for coord in coords do
@@ -74,13 +75,14 @@ def computeSavingsLonger (g: Grid) (costs: HMap Coord Int) (savings: HMap (Coord
            if g.get2D! neigbour != '#' then
                let cost := (costs[startCoord]! - costs[neigbour]! - step - 1)
                savings := savings.update (startCoord, neigbour) (·.getD cost |>.max cost)
-           coords' := coords'.insert neigbour
+           else
+              coords' := coords'.insert neigbour
       coords := coords'
    return savings
 
 
 def main : IO Unit := do
-  let g := (<- input).toGrid
+  let g := testInput.toGrid
   let sPos := g.find2D? (· == 'S') |>.get!
   let ePos := g.find2D? (· == 'E') |>.get!
   let scores := buildScores g sPos ePos
@@ -88,8 +90,12 @@ def main : IO Unit := do
      scores.keys.foldlM (computeSavingsLonger g scores) .empty
   let res := res
      |>.toList
-     |>.map Prod.snd
-     |>.filter (· >= 100)
-     |>.length
-  println! "{res}"
+     |>.filter (·.snd == 50)
+     |>.map Prod.fst
+
+  for (i, (s,e)) in res.enum do
+     let g' := g.set2D! s 'X' |>.set2D! e 'Y'
+     println! "\n\ncheat {i} from {s} to {e}:"
+     println! "{g.visualise}"
+
 

@@ -96,6 +96,6 @@ def main : IO Unit := do
   for (i, (s,e)) in res.enum do
      let g' := g.set2D! s 'X' |>.set2D! e 'Y'
      println! "\n\ncheat {i} from {s} to {e}:"
-     println! "{g.visualise}"
+     println! "{g'.visualise}"
 
 

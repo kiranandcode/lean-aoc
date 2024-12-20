@@ -59,24 +59,29 @@ def process (input: String) :=
 def Int.max (v1 v2: Int) : Int := if v1 >= v2 then v1 else v2
 
 
-def computeSavingsLonger (g: Grid) (costs: HMap Coord Int) (savings: HMap (Coord × Coord) Int) (startCoord: Coord) :
-  IO (HMap (Coord × Coord) Int) := do
-   let mut savings : HMap (Coord × Coord) Int := savings
+def computeSavingsLonger (g: Grid) (costs: HMap Coord Int) (savings: HMap (Coord × Coord) (HSet Coord × Int)) (startCoord: Coord) :
+  IO (HMap (Coord × Coord) (HSet Coord × Int)) := do
+   let mut savings := savings
    let mut step := 0
-   let mut coords : HSet Coord := g.neigboursOf startCoord
+   let mut coords : HMap Coord (HSet Coord) := g.neigboursOf startCoord
                  |>.filter (g.get2D! · == '#')
-                 |> Std.HashSet.ofList
-   while step < 21 do
+                 |>.map (fun c => (c, {c}))
+                 |> Std.HashMap.ofList
+   while step < 20 do
       step := step + 1
-      let mut coords' := Std.HashSet.empty
-      for coord in coords do
+      let mut coords' := Std.HashMap.empty
+      for (coord, seenCoords) in coords do
          let neigbours := g.neigboursOf coord |>.filter (· != startCoord)
          for neigbour in neigbours do
            if g.get2D! neigbour != '#' then
                let cost := (costs[startCoord]! - costs[neigbour]! - step - 1)
-               savings := savings.update (startCoord, neigbour) (·.getD cost |>.max cost)
+               savings := savings.update (startCoord, neigbour) (fun v =>
+                  match v with
+                  | none => (seenCoords, cost)
+                  | some (oldSeenCoord, oldCost) => if oldCost > cost then (seenCoords, cost) else (oldSeenCoord, oldCost)
+                  )
            else
-              coords' := coords'.insert neigbour
+             coords' := coords'.insert neigbour (seenCoords.insert neigbour)
       coords := coords'
    return savings
 
@@ -90,11 +95,12 @@ def main : IO Unit := do
      scores.keys.foldlM (computeSavingsLonger g scores) .empty
   let res := res
      |>.toList
-     |>.filter (·.snd == 50)
-     |>.map Prod.fst
+     |>.filter (·.snd.snd == 50)
 
-  for (i, (s,e)) in res.enum do
-     let g' := g.set2D! s 'X' |>.set2D! e 'Y'
+  for (i, ((s,e), (coords, _))) in res.enum do
+     let mut g' := g.set2D! s 'X' |>.set2D! e 'Y'
+     for coord in coords do
+        g' := g'.set2D! coord 'Z'
      println! "\n\ncheat {i} from {s} to {e}:"
      println! "{g'.visualise}"
 

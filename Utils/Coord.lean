@@ -1,6 +1,8 @@
 import Batteries
 import Utils.Parsec
 
+def Nat.absDiff (x y : Nat) : Nat := if x < y then y - x else x - y
+
 def Coord := Nat × Nat
 deriving Repr, BEq, Inhabited, Hashable
 
@@ -32,6 +34,9 @@ def Coord.swap (p1: Coord) : Coord :=
 
 def Coord.x (c: Coord) : Nat := c.fst
 def Coord.y (c: Coord) : Nat := c.snd
+
+def Coord.manhattenDistance (c1 c2: Coord) : Nat := c1.x.absDiff c2.x + c1.y.absDiff c2.y
+
 
 def Coord.toICoord (pos: Coord) : ICoord := 
    ((pos.fst : Int), (pos.snd : Int))

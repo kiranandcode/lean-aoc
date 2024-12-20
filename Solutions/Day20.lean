@@ -44,64 +44,43 @@ def computeSavings (g: Grid) (costs: HMap Coord Int) (coord: Coord) :=
    |>.map (fun c => ((coord, c), costs[coord]! - costs[c]! - 2))
 
 
-def process (input: String) :=
+def process (bound: Int) (input: String) :=
   let g := input.toGrid
   let sPos := g.find2D? (· == 'S') |>.get!
   let ePos := g.find2D? (· == 'E') |>.get!
   let scores := buildScores g sPos ePos
   scores.keys.flatMap (computeSavings g scores)
   |>.map Prod.snd
-  |>.filter (· >= 100)
+  |>.filter (· >= bound)
   |>.length
 
-#eval process <$> input
+#example process 1 testInput evaluates to 44
+#example process 100 <$> input evaluates to 1321
 
-def Int.max (v1 v2: Int) : Int := if v1 >= v2 then v1 else v2
+def computeAllCheats (scores: HMap Coord Int) (coords: List Coord) := Id.run $ do
+  let mut cheats := Std.HashMap.empty
+  for c1 in coords do
+     for c2 in coords do
+         let distance := c1.manhattenDistance c2
+         if distance <= 20 && scores[c1]! > scores[c2]! + distance then
+            cheats := cheats.insert (c1,c2) (scores[c1]! - scores[c2]! - distance)
+  return cheats
 
-
-def computeSavingsLonger (g: Grid) (costs: HMap Coord Int) (savings: HMap (Coord × Coord) (HSet Coord × Int)) (startCoord: Coord) :
-  IO (HMap (Coord × Coord) (HSet Coord × Int)) := do
-   let mut savings := savings
-   let mut step := 0
-   let mut coords : HMap Coord (HSet Coord) := g.neigboursOf startCoord
-                 |>.filter (g.get2D! · == '#')
-                 |>.map (fun c => (c, {c}))
-                 |> Std.HashMap.ofList
-   while step < 20 do
-      step := step + 1
-      let mut coords' := Std.HashMap.empty
-      for (coord, seenCoords) in coords do
-         let neigbours := g.neigboursOf coord |>.filter (· != startCoord)
-         for neigbour in neigbours do
-           if g.get2D! neigbour != '#' then
-               let cost := (costs[startCoord]! - costs[neigbour]! - step - 1)
-               savings := savings.update (startCoord, neigbour) (fun v =>
-                  match v with
-                  | none => (seenCoords, cost)
-                  | some (oldSeenCoord, oldCost) => if oldCost > cost then (seenCoords, cost) else (oldSeenCoord, oldCost)
-                  )
-           else
-             coords' := coords'.insert neigbour (seenCoords.insert neigbour)
-      coords := coords'
-   return savings
-
-
-def main : IO Unit := do
-  let g := testInput.toGrid
+def process' (bound: Int) (input: String) :=
+  let g := input.toGrid
   let sPos := g.find2D? (· == 'S') |>.get!
   let ePos := g.find2D? (· == 'E') |>.get!
   let scores := buildScores g sPos ePos
-  let res <-
-     scores.keys.foldlM (computeSavingsLonger g scores) .empty
-  let res := res
-     |>.toList
-     |>.filter (·.snd.snd == 50)
+  let cheats := computeAllCheats scores scores.keys
+  cheats.values
+  |>.filter (· >= bound)
+  |>.length
 
-  for (i, ((s,e), (coords, _))) in res.enum do
-     let mut g' := g.set2D! s 'X' |>.set2D! e 'Y'
-     for coord in coords do
-        g' := g'.set2D! coord 'Z'
-     println! "\n\ncheat {i} from {s} to {e}:"
-     println! "{g'.visualise}"
+#example process' 50 testInput evaluates to 285
+-- #example process' 100 <$> input evaluates to 971737
 
 
+def main : IO Unit := do
+  let res <- process' 100 <$> input
+  println! "{res}"
+-- 971737

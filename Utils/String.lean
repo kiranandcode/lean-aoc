@@ -16,7 +16,8 @@ def words (s: String) : List String :=
   |>.filter (not ∘ String.isEmpty)
 
 def toGrid (s: String) : Array (Array Char) :=
-   s.splitLines
+   s.splitOn "\n"
+   |>.filter (not ∘ String.isEmpty)
    |>.toArray.map (List.toArray ∘ String.toList)
 
 end String

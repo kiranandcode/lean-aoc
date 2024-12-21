@@ -135,7 +135,7 @@ def Array.neigboursOf (g: Array (Array A)) (pos : Nat × Nat) : List (Nat × Nat
     |>.filter (fun pos => pos.fst < g.size && pos.snd < g[0]!.size)
 
 def Array.inBounds (g: Array (Array A)) (c: Coord) :=
-   c.x >= 0 && c.y >= 0 && c.y < g.size && c.x < g[0]!.size
+   c.x >= 0 && c.y >= 0 && c.x < g.size && c.y < g[0]!.size
 
 def Array.visualise (g: Array (Array Char)) :=
   String.concat (sepBy := "\n") (g.toList.map (fun row => row.toList.asString))

@@ -54,3 +54,9 @@ def Direction.move (coord: Coord) : Direction -> Option Coord
 | .Left => if coord.snd > 0 then some (coord.fst,coord.snd - 1) else none
 | .Right => some (coord.fst,coord.snd + 1)
 
+def Direction.moveBy (by_: Nat) (coord: Coord) : Direction -> Option Coord
+| .Up => if coord.fst >= by_ then some (coord.fst-by_,coord.snd) else none
+| .Down => some (coord.fst+by_,coord.snd)
+| .Left => if coord.snd >= by_ then some (coord.fst,coord.snd - by_) else none
+| .Right => some (coord.fst,coord.snd + by_)
+

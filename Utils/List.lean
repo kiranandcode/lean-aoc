@@ -120,3 +120,14 @@ def List.flatMapM  {M: Type -> Type}  [Monad M]
 def List.counter {A} [BEq A] [Hashable A] (ls: List A) : Std.HashMap A Nat :=
    ls.foldl (fun map v => map.alter v (fun e => some (e.get? + 1)))
    .empty
+
+def List.combinationsTR (ls: List (List A)) (acc: List (List A)) : List (List A) :=
+   match ls with
+   | [] => acc.map List.reverse |> List.reverse
+   | h :: t =>
+      t.combinationsTR (acc.flatMap (fun acc => h.map acc.cons))
+
+@[inline]
+def List.combinations (ls: List (List A)) : List (List A) :=
+   List.combinationsTR ls [[]]
+

@@ -72,6 +72,12 @@ def takeFind? (p : α → Bool) : List α → Option (α × List α) :=
 structure Take2 (A: Type) where data : List A
 def take2 (ls: List A) : Take2 A := ⟨ls⟩
 
+structure SlidingWindow (A: Type) where
+   data : List A
+   n: Nat
+
+def slidingWindow (n: Nat) (ls: List A) : SlidingWindow A := ⟨ls, n⟩
+
 end List
 
 #eval [1,2,3,4].takeFind? (· == 3)
@@ -102,7 +108,37 @@ def List.Take2.toList (t: List.Take2 A) : List (A × A) := Id.run $ do
     for (l,r) in t do
        ls := ls.push (l,r)
     return ls.toList
-       
+
+def List.take? : Nat → List α → Option (List α)
+  | 0,   _     => some []
+  | _+1, []    => none
+  | n+1, a::as => do return a :: (<- List.take? n as)
+
+
+instance [Monad M] : ForIn M (List.SlidingWindow A) (List A) where
+   forIn := fun a b f => do
+      let rec loop b (ls: List A) :=
+          match ls with
+          | [] => return b
+          | _ :: t =>
+             match ls.take? a.n with
+             | Option.none =>  return b
+             | Option.some h => do
+                let res <- (f h b)
+                match res with
+                | .done v => return v
+                | .yield b =>
+                    loop b t
+      loop b a.data
+
+
+#eval
+  Id.run $ do
+    let mut acc := #[]
+    for ls in [1,2,3,4,5].slidingWindow 3 do
+      acc := (acc.push ls)
+    return acc
+
 
 private def List.insertSortedTR (ls : List A) (leq: A -> A -> Bool) (x: A) (acc: List A) : List A :=
   match ls with

@@ -167,3 +167,15 @@ def List.combinationsTR (ls: List (List A)) (acc: List (List A)) : List (List A)
 def List.combinations (ls: List (List A)) : List (List A) :=
    List.combinationsTR ls [[]]
 
+@[specialize]
+def List.iterate {A: Type} (f: A -> A) (init: A) : Nat -> List A
+| 0 => []
+| .succ n => f init :: List.iterate f (f init) n
+
+@[inline]
+def List.foldl1! [Inhabited A] (f: A -> A -> A) (ls: List A) : A :=
+  ls.tail!.foldl f ls.head!
+
+@[inline]
+def List.scanl1! [Inhabited A] (f: A -> A -> A) (ls: List A) : List A :=
+  ls.tail!.scanl f ls.head!

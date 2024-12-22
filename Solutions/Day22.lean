@@ -35,13 +35,6 @@ def step (secret: Integer) : Integer :=
    let secret := secret.mix (secret * 2048) |>.prune
    secret
 
-def List.iterate {A: Type} (f: A -> A) (init: A) : Nat -> List A
-| 0 => []
-| .succ n => f init :: List.iterate f (f init) n
-  
-def Function.iterate {A: Type} (f: A -> A) (n: Nat) (init: A) :  A := match n with
-| 0 => init
-| .succ n => iterate f n (f init)
 
 
 #example List.iterate step 123 10
@@ -56,11 +49,7 @@ def process (input: String) :=
       |>.sum
 
 #example process testInput evaluates to (37327623: Integer)
-#eval process <$> input
-def List.foldl1! [Inhabited A] (f: A -> A -> A) (ls: List A) : A :=
-  ls.tail!.foldl f ls.head!
-def List.scanl1! [Inhabited A] (f: A -> A -> A) (ls: List A) : List A :=
-  ls.tail!.scanl f ls.head!
+-- #eval process <$> input
    
 def computeDiffs (ls: List Int) :=
    let hd := ls.head!

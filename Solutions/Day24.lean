@@ -286,7 +286,7 @@ def main: IO Unit := do
    let mut nConstraints := [ ]
    let mut foundSuccess := false
    let mut finalSwaps : List (String × String) := []
-   let mut inputPairs := [ ]
+   let mut inputPairs := [ (2^(sz -1) - 1, 2^(sz -1) - 1) ]
    
    while !foundSuccess do
       let (buf, ()) <- IO.withStdoutToString $ do

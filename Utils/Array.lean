@@ -139,3 +139,12 @@ def Array.inBounds (g: Array (Array A)) (c: Coord) :=
 
 def Array.visualise (g: Array (Array Char)) :=
   String.concat (sepBy := "\n") (g.toList.map (fun row => row.toList.asString))
+
+def Array.transpose [Inhabited A] (g: Array (Array A)) : Array (Array A) := Id.run $ do
+  let w := g[0]!.size
+  let mut res := #[]
+  for i in [0:w] do
+    res := res.push (g.map (fun r => r[i]!))
+  return res
+
+

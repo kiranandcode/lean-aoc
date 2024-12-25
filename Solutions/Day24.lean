@@ -77,8 +77,6 @@ def Machine.propagate (m: Machine) : Machine := Id.run $ do
                   remaining := remaining.erase elt
       return {m with inputs}
 
-#eval (4).toBvec
-
 def Machine.getXsize (m: Machine) : Nat :=
   m.inputs.keys.filter (·.startsWith "x") |>.length
 def Machine.getYsize (m: Machine) : Nat :=

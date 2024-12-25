@@ -283,17 +283,13 @@ def main: IO Unit := do
    let internalNodeRevMap := (m.getInternalVec ++ m.getZvec).enum |>.toHashMap
 
    let sz := m.getZsize
-   let mut nConstraints := [ [116, 158, 192, 130, 88, 206, 94, 15] ]
+   let mut nConstraints := [ ]
    let mut foundSuccess := false
    let mut finalSwaps : List (String × String) := []
-   let mut inputPairs := [
-           ((2^(sz-2)-1), (2^(sz-2)-1)),
-           ((2^(sz-1)-1), 1)
-   ]
+   let mut inputPairs := [ ]
    
    while !foundSuccess do
       let (buf, ()) <- IO.withStdoutToString $ do
-         println! "(set-option :produce-unsat-cores true)"
          let aid <- IO.mkRef 0
          let assert s : IO Unit := do
             let idv <- aid.get
@@ -324,21 +320,19 @@ def main: IO Unit := do
                 assert s!"(not (= swap-{i}-in swap-{j}-out))"
                 assert s!"(not (= swap-{i}-out swap-{j}-out))"
                 assert s!"(not (= swap-{j}-in swap-{i}-out))"
+
          for (i,(l,r)) in inputPairs.enum do
            declareModelAdditionConstraints i m assert l r 
 
-
          println! "(check-sat)"
-         -- println! "(get-unsat-core)"
-         -- println! "(get-model)"
          for i in [0:4] do
             println! "(eval swap-{i}-in)"
             println! "(eval swap-{i}-out)"
-      println! "generated script, writing to file"
+
       if <- ("/tmp/day24.z3" : System.FilePath).pathExists then
          IO.FS.removeFile "/tmp/day24.z3";
       IO.FS.writeFile "/tmp/day24.z3" buf
-      println! "written file, now running z3"
+      println! "generated query; running z3"
       let res <- IO.Process.runCmdWithInput "z3" #["-smt2", "/tmp/day24.z3"]
       let res := res.splitLines
       let rawRes := res.tail!.map String.toNat!
@@ -346,7 +340,7 @@ def main: IO Unit := do
          then some (rawRes |>.map (internalNodeRevMap.get!) |>.take2.toList)
          else none
       match swaps with
-      | none => println! "was unsat!!!"; break
+      | none => println! "reached unsat :("; break
       | some swaps =>
          println! "found candidate swaps {swaps}!"
          foundSuccess := true
@@ -382,7 +376,5 @@ def main: IO Unit := do
            nConstraints := nConstraints.cons rawRes
          else
            finalSwaps := swaps
-
-      println! "{finalSwaps}"
       println! "{finalSwaps.flatMap (fun (a,b) => [a,b]) |>.mergeSort |>String.concat (sepBy:=",")}"
 

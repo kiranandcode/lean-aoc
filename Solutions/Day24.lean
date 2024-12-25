@@ -28,9 +28,9 @@ def Op.apply (l r: Bool) : Op -> Bool
 
 instance : ToString Op where
   toString
-  | .And => "AND"
-  | .Or => "OR"
-  | .Xor => "XOR"
+  | .And => "and"
+  | .Or => "or"
+  | .Xor => "xor"
 
 def Op.ofString! : String -> Op
 | "AND" => And
@@ -42,7 +42,12 @@ def parseInstruction (s: String) : (Op × String × String) :=
    let words := s.words
    (Op.ofString! words[1]!, words[0]!, words[2]!)
 
-def parseInput (input: String) :=
+structure Machine where
+  inputs: HMap String Bool
+  rules: HMap String (Op × String × String)
+deriving Repr
+
+def Machine.ofString (input: String) : Machine :=
       let ls := input.splitOn "\n\n"
       let (inputs, bindings) := (ls[0]!, ls[1]!)
       let inputs :=
@@ -56,39 +61,141 @@ def parseInput (input: String) :=
          |>.map (List.map String.trim)
          |>.map (fun v => (v[1]!, parseInstruction v[0]!))
          |>.toHashMap
-     (inputs, computations)
+      Machine.mk inputs computations
 
-def computeResults (inputs: HMap String Bool) (computations: HMap String (Op × String × String)) := Id.run $ do
-      let mut inputs := inputs
-      let mut remaining := Std.HashSet.ofList computations.keys
-      while !remaining.isEmpty do
+def Machine.propagate (m: Machine) : Machine := Id.run $ do
+      let mut inputs := m.inputs
+      let mut remaining := Std.HashSet.ofList m.rules.keys
+      let mut anyChanges := true
+      while !remaining.isEmpty && anyChanges do
+          anyChanges := false
           for elt in remaining do
-              let (op, v1, v2) := computations[elt]!
+              let (op, v1, v2) := m.rules[elt]!
               if inputs.contains v1 && inputs.contains v2 then
+                  anyChanges := true
                   inputs := inputs.insert elt (op.apply inputs[v1]! inputs[v2]!)
                   remaining := remaining.erase elt
-      return inputs
+      return {m with inputs}
+
+#eval (4).toBvec
+
+def Machine.getXsize (m: Machine) : Nat :=
+  m.inputs.keys.filter (·.startsWith "x") |>.length
+def Machine.getYsize (m: Machine) : Nat :=
+  m.inputs.keys.filter (·.startsWith "y") |>.length
+def Machine.getZsize (m: Machine) : Nat :=
+  m.rules.keys.filter (·.startsWith "z") |>.length
+
+def Machine.getXvec (m: Machine) : List (String × Bool) :=
+    m.inputs.toList
+    |>.filter (flip String.startsWith "x" ∘ Prod.fst)
+    |>.mergeSort (·.fst <= ·.fst)
+
+def Machine.getYvec (m: Machine) : List (String × Bool) :=
+    m.inputs.toList
+    |>.filter (flip String.startsWith "y" ∘ Prod.fst)
+    |>.mergeSort (·.fst <= ·.fst)
+
+def Machine.getZvec (m: Machine) : List String :=
+    m.rules.toList
+    |>.map Prod.fst
+    |>.filter (flip String.startsWith "z")
+    |>.mergeSort
+
+def Machine.getInternalVec (m: Machine) : List (String) :=
+    m.rules.toList
+    |>.map Prod.fst
+    |>.filter (not ∘ String.startsWith (pre:="z"))
+    |>.mergeSort
 
 
-def bvecToNat (ls: List Bool) : Nat :=
-    ls.reverse.foldl (fun n (v: Bool) => n * 2 + (if v then 1 else 0)) 0
+def Machine.setX (x: Nat) (m: Machine) : Machine := Id.run $ do
+   let mut inputs := m.inputs
+   let xkeys := m.inputs.keys.filter (·.startsWith "x") |>.mergeSort
+   for xinput in xkeys do
+      inputs := inputs.insert xinput false
+   for (xinput, vl) in xkeys.zip x.toBvec do
+      inputs := inputs.insert xinput vl
+   {m with inputs}
 
-def natToBvecTR (n: Nat) (acc: List Bool) : List Bool :=
-   if n < 2
-   then acc.cons (n == 1) |>.reverse
-   else natToBvecTR (n/2)  (acc.cons (n % 2 == 1)) 
+def Machine.setY (y: Nat) (m: Machine) : Machine := Id.run $ do
+   let mut inputs := m.inputs
+   let xkeys := m.inputs.keys.filter (·.startsWith "y") |>.mergeSort
+   for yinput in xkeys do
+      inputs := inputs.insert yinput false
+   for (yinput, vl) in xkeys.zip y.toBvec do
+      inputs := inputs.insert yinput vl
+   {m with inputs}
 
-def natToBvec (n: Nat) : List Bool := natToBvecTR n []
+def Machine.getZ (m: Machine) : Nat :=
+    m.getZvec
+    |>.map (m.inputs.get!)
+    |> Nat.ofBvec
 
+def Machine.getZ? (m: Machine) : Option Nat :=
+    m.getZvec
+    |>.map (m.inputs.get?)
+    |>.allSome
+    |> Option.map Nat.ofBvec
+
+def Machine.getDeps (output: String) (m: Machine) : HSet String := Id.run $ do
+   let mut deps : HSet String := .empty
+   let mut queue := [output]
+   let mut anyChanges := true
+   while anyChanges do
+      anyChanges := false
+      let mut newQueue := #[]
+      for elt in queue do
+          if let some (_, l, r) := m.rules[elt]? then
+              newQueue := newQueue.push l
+              newQueue := newQueue.push r
+              anyChanges := true
+      deps := deps.insertMany newQueue
+      queue := newQueue.toList
+   return deps
+
+def Machine.run (x y: Nat) (m: Machine) : Nat :=
+    m.setX x
+    |>.setY y
+    |>.propagate
+    |>.getZ
+
+def Machine.run? (x y: Nat) (m: Machine) : Option Nat :=
+    m.setX x
+    |>.setY y
+    |>.propagate
+    |>.getZ?
+
+
+def Machine.swap (o1 o2: String) (m: Machine) : Option Machine :=
+  if (m.getDeps o1 |>.contains o2) || (m.getDeps o2 |>.contains o1)
+  then none
+  else some {m with rules:=m.rules
+            |>.insert o2 m.rules[o1]!
+            |>.insert o1 m.rules[o2]!}
+def Machine.swap! (o1 o2: String) (m: Machine) :  Machine :=
+ {m with rules:=m.rules
+            |>.insert o2 m.rules[o1]!
+            |>.insert o1 m.rules[o2]!}
+
+
+def Machine.getZwrong (expt: Nat) (m: Machine) :=
+   m.getZvec.zip expt.toBvec
+   |>.filter (fun (pair: String × Bool) => m.inputs[pair.fst]! != pair.snd)
+
+def Machine.depsOf (output: String) (m: Machine) : HSet String :=
+   match m.rules[output]? with
+   | .none => {}
+   | .some (_, l, r) => {l,r}
+
+def Machine.applySwaps (ls: List (String × String)) (m: Machine) : Machine :=
+      ls.foldl (fun (m: Machine) (l,r) => m.swap! l r) m
 
 def process (input: String) :=
-  let (inputs, computations) := parseInput input
-  computeResults inputs computations
-      |>.toList
-      |>.filter (flip String.startsWith "z" ∘ Prod.fst)
-      |>.mergeSort (·.fst <= ·.fst)
-      |>.map Prod.snd
-      |> bvecToNat
+  let machine := Machine.ofString input
+  machine
+  |>.propagate
+  |>.getZ
 
 #example process testInput evaluates to 4
 #example process <$> input evaluates to 51657025112326
@@ -113,77 +220,169 @@ x03 AND y03 -> z03
 x04 AND y04 -> z04
 x05 AND y05 -> z00"
 
-def toPadded (ind: Nat) : String :=
-   if ind < 9 then "0" ++ s!"{ind + 1}" else s!"{ind + 1}"
+def IO.withStdoutToString [Monad m] [MonadFinally m] [MonadLiftT BaseIO m] (x : m α) : m (String × α) := open IO in open FS in do
+  let bOut ← mkRef { : Stream.Buffer }
+  let r ← withStdout (Stream.ofBuffer bOut) x
+  let bOut ← liftM (m := BaseIO) bOut.get
+  let out := String.fromUTF8! bOut.data
+  pure (out, r)
 
-def inv (computations: HMap String (Op × String × String)) (inputs: HMap String Bool) (config: String × Bool)
-  : List (List (String × Bool))  :=
-   let (output, expected) := config
-   let (op, v1, v2) := computations[output]!
-   match op, expected, inputs[v1]!, inputs[v2]! with
-   | .And, true, v1E, v2E => (if v1E then [] else [[(v1,true)]]) ++ (if v2E then [] else [[(v2,true)]])
-   | .And, false, v1E, v2E =>
-      if v1E && v2E then [[(v1, false)], [(v2,false)], [(v1,false), (v2,false)]]
-      else [[]]
-   | .Or, false, v1E, v2E => (if !v1E then [] else [[(v1,false)]]) ++ (if !v2E then [] else [[(v2,false)]])
-   | .Or, true, v1E, v2E =>
-      if !v1E && !v2E then [[(v1, true)], [(v2, true)], [(v1,true), (v2,true)]]
-      else [[]]
-   | .Xor, true, v1E, v2E =>
-      if v1E && v2E then [[(v1, false)], [(v2, false)]]
-      else if !v1E && !v2E then [[(v1, true)], [(v2, true)]]
-      else [[]]
-   | .Xor, false, true, false => [[(v1, false)], [(v2, false)]]
-   | .Xor, false, false, true => [[(v1, true)], [(v2, false)]]
-   | .Xor, false, _, _ => []
-
-def toMap (inputs: List (String × Bool)) : Option (List (String × Bool)) := do
-   let mut hmap: HMap String Bool := .empty
-   for (k,v) in inputs do
-      if k.startsWith "x" || k.startsWith "y" then none
-      match hmap[k]?.map (· == v) with
-      | .none => hmap := hmap.insert k v
-      | .some true => continue
-      | .some false => none
-   return hmap.toList
    
-def main : IO Unit := do
-  let (inputs, computations) := parseInput (<-input)
-  let x :=
-    inputs.toList
-    |>.filter (flip String.startsWith "x" ∘ Prod.fst)
-    |>.mergeSort (·.fst <= ·.fst)
-    |>.map Prod.snd
-    |> bvecToNat
-  let y :=
-    inputs.toList
-    |>.filter (flip String.startsWith "y" ∘ Prod.fst)
-    |>.mergeSort (·.fst <= ·.fst)
-    |>.map Prod.snd
-    |> bvecToNat
-  let inputs := computeResults inputs computations
-  let z : List Bool := x + y |> natToBvec
-  let zInvalid :=  z
-                   |>.enum
-                   |>.map (fun (ind, (z: Bool)) => ("z" ++ toPadded ind, z))
-                   |>.filter (fun ((ind: String), z) => inputs[ind]?.isSome && inputs[ind]! != z)
-  for elt in  zInvalid
-  |>.take 5
-  |>.map (inv computations inputs)
-  |>.combinations
-  |>.map List.flatten
-  |>.filterMap toMap
-  |>.flatMap (List.flatten ∘ List.combinations ∘ List.map (inv computations inputs))
-  |>.filterMap toMap
-  |>.flatMap (List.flatten ∘ List.combinations ∘ List.map (inv computations inputs))
-  |>.filterMap toMap
-  |>.flatMap (List.flatten ∘ List.combinations ∘ List.map (inv computations inputs))
-  |>.filterMap toMap
-  |>.flatMap (List.flatten ∘ List.combinations ∘ List.map (inv computations inputs))
-  |>.filterMap toMap
-  |>.flatMap (List.map Prod.fst)
-  |> Std.HashSet.ofList
-  do
-    println! "{elt}"
+def toBvexpr (sz: Nat) (elts: List String) :=
+     elts.enum.map
+        (fun ((i: Nat), (k: String)) =>
+          s!"(bvshl (ite {k} (_ bv{1} {sz}) (_ bv{0} {sz})) (_ bv{i} {sz}))" 
+        )
+        |> String.concat (sepBy:=" ")
+        |> (fun v => s!"(bvor {v})")
 
-  println! "done!"
+def buildSelectorExpr (i: Nat) :=
+    List.range 4
+    |>.foldl (fun (s: String) ind =>
+      s!"(ite (= {i} swap-{ind}-in)
+              swap-{ind}-out
+              (ite (= {i} swap-{ind}-out)
+                   swap-{ind}-in
+                   {s}))"
+    ) s!"{i}"
+
+def getExpr (iter: Nat) (internalNodeMap: HMap String Nat) (v: String) (selector: Bool) :=
+   if v.startsWith "x" || v.startsWith "y"
+   then s!"{v}-{iter}"
+   else if selector
+   then s!"(select internal-{iter} {buildSelectorExpr internalNodeMap[v]!})"
+   else s!"(select internal-{iter} {internalNodeMap[v]!})"
+
+def declareModelAdditionConstraints (iter: Nat) (m: Machine) (assert: String -> IO Unit) (x: Nat) (y: Nat) : IO Unit := do
+  let sz := m.getZsize
+  println!"(declare-const internal-{iter} (Array Int Bool))"
+  for (x,_) in m.getXvec do
+     println!"(declare-const {x}-{iter} Bool)"
+  for (y,_) in m.getYvec do
+     println!"(declare-const {y}-{iter} Bool)"
+  let internalNodeMap := (m.getInternalVec ++ m.getZvec).enum.map Prod.swap |>.toHashMap
+
+  for (output, op, v1, v2) in m.rules do
+     assert s!"(=
+                 {getExpr iter internalNodeMap output (selector:=false)}
+                 ({op}
+                    {getExpr iter internalNodeMap v1 true}
+                    {getExpr iter internalNodeMap v2 true}))"
+
+  let xExpr := m.getXvec.map Prod.fst |>.map (fun v => s!"{v}-{iter}") |> toBvexpr sz
+  let yExpr := m.getYvec.map Prod.fst |>.map (fun v => s!"{v}-{iter}") |> toBvexpr sz
+  let zExpr := m.getZvec |>.map (fun v => getExpr iter internalNodeMap v true) |> toBvexpr sz
+
+  assert s!"(= (bv2int {xExpr}) {x})"
+  assert s!"(= (bv2int {yExpr}) {y})"
+
+  assert s!"(= {zExpr} (bvadd {xExpr} {yExpr}))"
+
+def main: IO Unit := do
+   let m := Machine.ofString (<- input)
+   let internalNodeRevMap := (m.getInternalVec ++ m.getZvec).enum |>.toHashMap
+
+   let sz := m.getZsize
+   let mut nConstraints := [ [116, 158, 192, 130, 88, 206, 94, 15] ]
+   let mut foundSuccess := false
+   let mut finalSwaps : List (String × String) := []
+   let mut inputPairs := [
+           ((2^(sz-2)-1), (2^(sz-2)-1)),
+           ((2^(sz-1)-1), 1)
+   ]
+   
+   while !foundSuccess do
+      let (buf, ()) <- IO.withStdoutToString $ do
+         println! "(set-option :produce-unsat-cores true)"
+         let aid <- IO.mkRef 0
+         let assert s : IO Unit := do
+            let idv <- aid.get
+            println! "(assert (! {s} :named a{idv}))"
+            aid.set (idv + 1)
+
+         for i in [0:4] do
+            println! "(declare-const swap-{i}-in Int)"
+            println! "(declare-const swap-{i}-out Int)"
+         for nConstraint in nConstraints do
+             assert <|
+                nConstraint.take2.toList.enum.flatMap (fun (i, (l,r)) =>
+                 [s!"(= swap-{i}-in {l})",
+                  s!"(= swap-{i}-out {r})",]
+                )
+                |> String.concat (sepBy := " ")
+                |> (fun v => s!"(not (and {v}))")
+ 
+         for i in [0:4] do
+           assert s!"(not (= swap-{i}-in swap-{i}-out))"
+           assert s!"(< swap-{i}-in {internalNodeRevMap.size})"
+           assert s!"(< swap-{i}-out {internalNodeRevMap.size})"
+           assert s!"(<= 0 swap-{i}-in)"
+           assert s!"(<= 0 swap-{i}-out)"
+           for j in [0:4] do
+              if i != j then
+                assert s!"(not (= swap-{i}-in swap-{j}-in))"
+                assert s!"(not (= swap-{i}-in swap-{j}-out))"
+                assert s!"(not (= swap-{i}-out swap-{j}-out))"
+                assert s!"(not (= swap-{j}-in swap-{i}-out))"
+         for (i,(l,r)) in inputPairs.enum do
+           declareModelAdditionConstraints i m assert l r 
+
+
+         println! "(check-sat)"
+         -- println! "(get-unsat-core)"
+         -- println! "(get-model)"
+         for i in [0:4] do
+            println! "(eval swap-{i}-in)"
+            println! "(eval swap-{i}-out)"
+      println! "generated script, writing to file"
+      if <- ("/tmp/day24.z3" : System.FilePath).pathExists then
+         IO.FS.removeFile "/tmp/day24.z3";
+      IO.FS.writeFile "/tmp/day24.z3" buf
+      println! "written file, now running z3"
+      let res <- IO.Process.runCmdWithInput "z3" #["-smt2", "/tmp/day24.z3"]
+      let res := res.splitLines
+      let rawRes := res.tail!.map String.toNat!
+      let swaps := if res.head! == "sat"
+         then some (rawRes |>.map (internalNodeRevMap.get!) |>.take2.toList)
+         else none
+      match swaps with
+      | none => println! "was unsat!!!"; break
+      | some swaps =>
+         println! "found candidate swaps {swaps}!"
+         foundSuccess := true
+         let m' := m.applySwaps swaps
+         for (l,r) in inputPairs do
+            let res := m'.run? l r
+            if res.isNone then
+               foundSuccess := false
+               println! "machine does not produce output for values {l},{r}"
+               break
+            if res.isSome && l + r != res.get! then
+               foundSuccess := false
+               println! "does not produce the expected output for {l} + {r} = {l + r} != {res.get!}"
+               break
+         if foundSuccess then
+             for i in [0:3] do
+                let l <- IO.rand 0 (2^(sz - 1) - 1)
+                let r <- IO.rand 0 (2^(sz - 1) - 1)
+                let res := m'.run? l r
+                if res.isNone then
+                   foundSuccess := false
+                   println! "machine does not produce output for values {l},{r}"
+                   break
+                if res.isSome && l + r != res.get! then
+                   inputPairs := inputPairs.cons (l,r)
+                   foundSuccess := false
+                   println! "does not produce the expected output for {l} + {r} = {l + r} != {res.get!}, adding as a pair"
+                   break
+
+
+         if !foundSuccess then
+           println! "not the solution, cegis and continue"
+           nConstraints := nConstraints.cons rawRes
+         else
+           finalSwaps := swaps
+
+      println! "{finalSwaps}"
+      println! "{finalSwaps.flatMap (fun (a,b) => [a,b]) |>.mergeSort |>String.concat (sepBy:=",")}"
+

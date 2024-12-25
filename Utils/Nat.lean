@@ -20,5 +20,18 @@ def splitDigits (n: Nat) : Nat × Nat :=
   let lhs := n - rhs * exp
   (rhs, lhs)
 
+-- computes a natural number from a list of bits from least to most
+-- significant
+def ofBvec (ls: List Bool) : Nat :=
+    ls.reverse.foldl (fun n (v: Bool) => n * 2 + (if v then 1 else 0)) 0
+
+private def natToBvecTR (n: Nat) (acc: List Bool) : List Bool :=
+   if n < 2
+   then acc.cons (n == 1) |>.reverse
+   else natToBvecTR (n/2)  (acc.cons (n % 2 == 1)) 
+
+-- returns the Bits of {n} from least to most significant 
+def toBvec (n: Nat) : List Bool := natToBvecTR n []
+
 end Nat
 

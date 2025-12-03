@@ -2,6 +2,13 @@ import Batteries
 
 namespace Nat
 
+def factors (n: Nat) : List Nat := Id.run $ do
+  let mut factors := #[]
+  for i in 1 ... (n / 2) + 1 do
+     if n % i == 0 then
+        factors := factors.push i
+  return factors.toList
+
 def noDigits (n: Nat) := Id.run $ do
    let mut noDigits: Nat := 1
    let mut n := n

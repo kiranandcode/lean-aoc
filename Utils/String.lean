@@ -24,5 +24,14 @@ def toGrid (s: String) : Array (Array Char) :=
    |>.filter (not ∘ String.isEmpty)
    |>.toArray.map (List.toArray ∘ String.toList)
 
+partial def partitionIntoN (s: String) (n: Nat) := Id.run $ do
+   let mut srem := s
+   let mut components : Array String := #[]
+   while srem.length > 0 do
+      components := components.push (srem.take n)
+      srem := srem.drop n
+   return components
+
+
 end String
 

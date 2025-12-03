@@ -2,7 +2,7 @@ import Batteries
 import Utils
 open Std
 
-def input :=  AOC.getInput 1
+def input := AOC.getInput 1 (.some 2024)
 
 def exampleInput :=
 "3   4
@@ -18,7 +18,7 @@ def parseLine (line: String) : Option (Int × Int) := do
   line.words.map String.toInt!
   |> fun | [l,r] => some (l,r) | _ => none
 
-def process (i: String) :=
+def process (i: String) : Nat :=
    let (left, right) :=
      i.splitLines
      |>.filterMap parseLine

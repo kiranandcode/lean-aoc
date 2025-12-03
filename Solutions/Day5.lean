@@ -1,7 +1,7 @@
 import Batteries
 import Utils
 
-def input : IO String := AOC.getInput 5
+def input : IO String := AOC.getInput 5 (year := .some 2024)
 
 def exampleInput : String := "47|53
 97|13

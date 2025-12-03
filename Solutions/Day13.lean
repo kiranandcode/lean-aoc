@@ -1,7 +1,7 @@
 import Batteries
 import Utils
 
-def input := AOC.getInput 13
+def input := AOC.getInput 13 (year := .some 2024)
 def testInput := "Button A: X+94, Y+34
 Button B: X+22, Y+67
 Prize: X=8400, Y=5400

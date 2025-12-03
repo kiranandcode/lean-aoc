@@ -1,7 +1,7 @@
 import Batteries
 import Utils
 
-def input : IO String := AOC.getInput 2
+def input : IO String := AOC.getInput 2 (year := .some 2024)
 
 def parseInput (input: String) :=
    input.splitLines

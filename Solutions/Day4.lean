@@ -1,7 +1,7 @@
 import Batteries
 import Utils
 
-def input : IO String := AOC.getInput 4
+def input : IO String := AOC.getInput 4 (year:=.some 2024)
 
 def countXmas (s: String) :=
   let s := s.toLower

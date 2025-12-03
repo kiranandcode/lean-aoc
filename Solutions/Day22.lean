@@ -14,7 +14,7 @@ def testInput2 := "1
 3
 2024"
 
-def input := AOC.getInput 22
+def input := AOC.getInput 22 (year := .some 2025)
 
 abbrev Integer := UInt64
 

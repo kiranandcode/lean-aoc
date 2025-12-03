@@ -2,7 +2,7 @@ import Batteries
 import Utils
 
 
-def input : IO String := AOC.getInput 3
+def input : IO String := AOC.getInput 3 (year := .some 2024)
 
 def exampleInput := "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))"
 

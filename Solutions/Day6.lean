@@ -3,7 +3,7 @@ import Utils
 
 abbrev Grid := Array (Array Char)
 
-def input := AOC.getInput 6
+def input := AOC.getInput 6 (year := .some 2024)
 def testInput :=
 "....#.....
 .........#

@@ -1,7 +1,7 @@
 import Batteries
 import Utils
 
-def input := AOC.getInput 20
+def input := AOC.getInput 20 (year := .some 2025)
 
 def testInput :=
 "###############

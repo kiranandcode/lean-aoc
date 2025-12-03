@@ -3,12 +3,6 @@ import Utils.Macros
 import Utils.Option
 import Utils.Coord
 import Utils.String
--- def Array.findIdx?  (p : α → Bool) : Array α → (start : Nat := 0) → Option Nat := fun a start => do
---    for i in [start:a.size] do
---       if a[i]?.map p |>.getD false then
---          return i
---    none
-   
 
 structure Array.Diagonals (A: Type) where arr : Array (Array A)
 structure Array.RevDiagonals (A: Type) where arr : Array (Array A)
@@ -111,14 +105,14 @@ def Array.find2D? (arr: Array (Array A)) (f: A -> Bool) : Option (Nat × Nat) :=
       i := i + 1
    none
 
-#example (runST $ fun _ => do
+#example (Id.run $ do
   let mut ls := ([]: List (List Nat))
-  for i in (#[#[ 1, 2, 3, 4],
+  for i in ((#[#[ 1, 2, 3, 4],
               #[ 5, 6, 7, 8],
               #[ 9,10,11,12],
-              #[13,14,15,16]]).revDiagonalArrs do
-    ls := i :: ls
-  return ls.reverse) evaluates to (
+              #[13,14,15,16]]) : Array (Array Nat)).revDiagonalArrs do
+       ls := i :: ls
+  return (ls.reverse : List (List Nat))) evaluates to (
   [[16],
    [12, 15],
    [8, 11, 14],
@@ -138,7 +132,7 @@ def Array.inBounds (g: Array (Array A)) (c: Coord) :=
    c.x >= 0 && c.y >= 0 && c.x < g.size && c.y < g[0]!.size
 
 def Array.visualise (g: Array (Array Char)) :=
-  String.concat (sepBy := "\n") (g.toList.map (fun row => row.toList.asString))
+  String.concat (sepBy := "\n") (g.toList.map (fun row => String.ofList row.toList))
 
 def Array.transpose [Inhabited A] (g: Array (Array A)) : Array (Array A) := Id.run $ do
   let w := g[0]!.size

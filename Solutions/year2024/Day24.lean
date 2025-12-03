@@ -18,6 +18,8 @@ abbrev HMap A B [Hashable A] [BEq A] := Std.HashMap A B
 abbrev HSet A [Hashable A] [BEq A] := Std.HashSet A
 abbrev IMap := HMap String Bool
 
+def HSet.empty := @Std.HashSet.emptyWithCapacity
+
 inductive Op where | And | Or | Xor
 deriving Repr, Inhabited
 

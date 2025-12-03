@@ -30,7 +30,8 @@ end Std.HashMap
 #example Std.HashMap.ofList [('a',['b', 'c']), ('c',['d', 'e']), ('e',['f'])]
          |>.transitiveClosure
          |>.toList
-         evaluates to  [('e', ['f']), ('c', ['f', 'e', 'd']), ('a', ['f', 'e', 'd', 'c', 'b'])]
+         |>.mergeSort (le := (·.fst <= ·.fst))
+         evaluates to  [('a', ['b', 'c', 'd', 'e', 'f']), ('c', [ 'd', 'e', 'f' ]), ('e', ['f'])]
 
 def Std.HashMap.first? [Hashable A] [BEq A] (map: Std.HashMap A B) : Option A := 
    match map.foldM (fun _ (k: A) _ => .error k) () with 

@@ -13,6 +13,6 @@ def Std.HashSet.intersect [BEq A] [Hashable A] (s1 s2: Std.HashSet A) : Std.Hash
 
 def Std.HashSet.intersectMany [BEq A] [Hashable A] (hshs: List (Std.HashSet A)) : Std.HashSet A :=
   match hshs with
-  | [] => .empty
+  | [] => HashSet.emptyWithCapacity
   | h :: t =>
      t.foldl Std.HashSet.intersect h

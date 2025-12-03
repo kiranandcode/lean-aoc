@@ -1,4 +1,4 @@
 import Utils
 
-import Solutions.Day24
+import Solutions.year2024.Day24
 

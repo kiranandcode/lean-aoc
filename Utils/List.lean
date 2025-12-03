@@ -3,14 +3,15 @@ import Utils.HashMap
 
 namespace List
 
+def enum (ls : List A) : List (A × Nat) := ls.zipIdx
+
 def toHashMap {K V} [BEq K] [Hashable K] (l: List (K × V)) : Std.HashMap K V :=
-    flip l.foldl Std.HashMap.empty
+    flip l.foldl Std.HashMap.emptyWithCapacity
       (fun map m => map.insert m.fst m.snd)
 
 def toHashMapMulti {K V} [BEq K] [Hashable K] (l: List (K × V)) : Std.HashMap K (List V) :=
-    flip l.foldl Std.HashMap.empty
+    flip l.foldl Std.HashMap.emptyWithCapacity
       (fun map m => map.update m.fst (·.getD [] |>.cons m.snd))
-
 
 def foldMap (f : A -> B -> C × A) (init: A) (ls: List B) : List C × A := Id.run $ do
     let mut res := []
@@ -148,14 +149,9 @@ private def List.insertSortedTR (ls : List A) (leq: A -> A -> Bool) (x: A) (acc:
 def List.insertSorted (leq: A -> A -> Bool) (x: A) (ls : List A) : List A :=
    ls.insertSortedTR leq x []
 
-@[inline]
-def List.flatMapM  {M: Type -> Type}  [Monad M]
-   (a : List α) (b : α → M (List β)) : M (List β) := do
-   Functor.map flatten (mapM b a)
-
 def List.counter {A} [BEq A] [Hashable A] (ls: List A) : Std.HashMap A Nat :=
    ls.foldl (fun map v => map.alter v (fun e => some (e.get? + 1)))
-   .empty
+   .emptyWithCapacity
 
 def List.combinationsTR (ls: List (List A)) (acc: List (List A)) : List (List A) :=
    match ls with

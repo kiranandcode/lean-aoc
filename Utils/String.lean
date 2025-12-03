@@ -1,6 +1,10 @@
 import Batteries
 
 namespace String
+-- hehehe
+instance : GetElem String Nat Char (fun xs i => i < xs.length) where
+   getElem := fun s ind _ => String.Pos.Raw.get s (Pos.Raw.mk ind)
+
 def concat (s : List String) (sepBy := "") : String :=
    s.foldl (fun acc v => if acc.isEmpty then v else acc ++ sepBy ++ v) ""
 

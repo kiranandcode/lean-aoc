@@ -11,7 +11,7 @@ section UF
 variable {A} [BEq A] [Hashable A]
 
 def UF.empty : UF A :=
-   {nextId:=0, map:=.empty, uf:=.empty}
+   {nextId:=0, map:=.emptyWithCapacity, uf:=.empty}
 
 instance : Inhabited (UF A) where
   default := UF.empty
